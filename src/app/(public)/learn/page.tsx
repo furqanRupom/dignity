@@ -61,7 +61,7 @@ export default function Learn() {
                 <div className="mt-12 text-center">
                     <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-8 inline-block max-w-2xl">
                         <h2 className="text-xl font-semibold text-white mb-2">Our Learning Repository</h2>
-                        <p className="text-zinc-400 mb-6">We're currently organizing our learning materials. Check back soon for tutorials, notes, and resources.</p>
+                        <p className="text-zinc-400 mb-6">We&apos;re currently organizing our learning materials. Check back soon for tutorials, notes, and resources.</p>
                         <button className="border border-zinc-700 hover:border-zinc-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                             Coming Soon
                         </button>

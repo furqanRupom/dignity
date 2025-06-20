@@ -1,5 +1,5 @@
 'use client';
-import { Code2, BookOpen, MessageSquare, Github, Twitter, Linkedin } from 'lucide-react';
+import { Code2,  Github, Twitter, Linkedin } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Footer() {
