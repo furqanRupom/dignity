@@ -1,36 +1,277 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dignity Team Platform
 
-## Getting Started
+A collaborative learning platform for developer teams with project tracking, learning resources, and community features.
 
-First, run the development server:
+## Table of Contents
+1. [Tech Stack](#tech-stack)
+2. [Frontend Architecture](#frontend-architecture)
+3. [Backend API](#backend-api)
+   - [Authentication](#authentication)
+   - [Projects](#projects)
+   - [Learnlogs](#learnlogs)
+   - [Resources](#resources)
+   - [Events](#events)
+   - [Admin](#admin)
+4. [Database Schema](#database-schema)
+5. [Development Setup](#development-setup)
+6. [Deployment](#deployment)
+7. [Key Security Considerations](#key-security-considerations)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tech Stack
+
+### Frontend
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + Framer Motion
+- **UI**: Lucide React / Phosphor Icons
+- **State Management**: React Context (Auth)
+- **Form Handling**: React Hook Form + Zod
+
+### Backend
+- **Runtime**: Node.js 20+
+- **Framework**: Express.js
+- **Database**: MongoDB (Mongoose ODM)
+- **Authentication**: JWT + Cookie Sessions
+- **Validation**: Zod
+- **API Documentation**: Swagger UI
+
+## Key Features
+- Protected routes for authenticated users
+- Admin dashboard for user verification
+- Real-time updates via WebSockets (events)
+- Responsive layout with mobile navigation
+- Form validation with error handling
+
+## Backend API
+
+### Base URL
+`https://api.dignity-team.dev/v1`
+
+### Authentication
+
+#### `POST /auth/register`
+```json
+{
+  "username": "string (3-20 chars)",
+  "password": "string (min 6 chars)"
+}
+```
+- New users get `status: "pending"` until admin approval
+- Returns 201 on success
+
+#### `POST /auth/login`
+```json
+{
+  "username": "string",
+  "password": "string"
+}
+```
+- Returns JWT cookie on success
+- Only works for `status: "verified"` users
+
+#### `GET /auth/me`
+- Protected route
+- Returns current user data
+
+### Projects
+
+#### `GET /projects`
+- Returns all public projects
+- Filterable by `?status=active|completed`
+
+#### `POST /projects` (Protected)
+```json
+{
+  "title": "string",
+  "description": "string",
+  "techStack": ["string"],
+  "repoUrl": "string (optional)"
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### `PATCH /projects/:id` (Owner/Admin)
+```json
+{
+  "status": "active|completed"
+}
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Learnlogs
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+#### `POST /learnlogs` (Protected)
+```json
+{
+  "title": "string",
+  "content": "string",
+  "tags": ["string"],
+  "resources": ["url"]
+}
+```
 
-## Learn More
+#### `GET /learnlogs`
+- Paginated with `?page=1&limit=10`
+- Filterable by `?tag=mern`
 
-To learn more about Next.js, take a look at the following resources:
+### Resources
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### `GET /resources`
+- Returns all learning resources
+- Filterable by `?type=video|article|course`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+#### `POST /resources` (Admin)
+```json
+{
+  "title": "string",
+  "url": "string",
+  "type": "video|article|course",
+  "tags": ["string"]
+}
+```
 
-## Deploy on Vercel
+### Events
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### `GET /events`
+- Returns upcoming events
+- `?past=true` for previous events
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+#### `POST /events` (Verified Users)
+```json
+{
+  "title": "string",
+  "description": "string",
+  "date": "ISO string",
+  "duration": "number (minutes)"
+}
+```
+
+#### `POST /events/:id/join` (Verified Users)
+- Join an event
+
+### Admin
+
+#### `GET /admin/users` (Admin)
+- Lists all users with filters:
+  - `?status=pending|verified|rejected`
+  - `?role=user|admin`
+
+#### `PATCH /admin/users/:id` (Admin)
+```json
+{
+  "status": "verified|rejected",
+  "role": "user|admin"
+}
+```
+
+## Database Schema
+
+### User
+```typescript
+{
+  username: string,       // unique
+  password: string,       // hashed
+  status: 'pending'|'verified'|'rejected',
+  role: 'user'|'admin',
+  joinedAt: Date,
+  lastActive: Date
+}
+```
+
+### Project
+```typescript
+{
+  title: string,
+  description: string,
+  createdBy: ObjectId(User),
+  techStack: string[],
+  status: 'planning'|'active'|'completed',
+  repoUrl?: string,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Learnlog
+```typescript
+{
+  title: string,
+  content: string,
+  author: ObjectId(User),
+  tags: string[],
+  resources: string[],
+  createdAt: Date
+}
+```
+
+### Event
+```typescript
+{
+  title: string,
+  description: string,
+  host: ObjectId(User),
+  participants: ObjectId(User)[],
+  date: Date,
+  duration: number, // minutes
+  createdAt: Date
+}
+```
+
+## Development Setup
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Environment Variables:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_WS_URL=ws://localhost:5000
+```
+
+### Backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+Environment Variables:
+```env
+MONGO_URI=mongodb://localhost:27017/dignity-dev
+JWT_SECRET=your-secret-key
+ADMIN_KEY=initial-admin-key
+PORT=5000
+```
+
+## Deployment
+
+### Production Requirements
+- MongoDB Atlas cluster
+- Redis for session storage
+- PM2 process manager
+- NGINX reverse proxy
+
+### CI/CD Pipeline
+1. Push to `main` triggers build
+2. Run test suites
+3. Build Docker images
+4. Deploy to Kubernetes cluster
+
+## Key Security Considerations
+
+1. **User Verification Flow**
+   - New registrations require admin approval
+   - Admin dashboard shows pending users
+   - Email notifications for status changes
+
+2. **Rate Limiting**
+   - 100 requests/minute for auth endpoints
+   - 30 requests/minute for other endpoints
+
+3. **Data Validation**
+   - All endpoints use Zod validation
+   - Sanitize user-generated content
+
+4. **Role-Based Access**
+   - Middleware checks user status/role
+   - Protected routes for verified users only
